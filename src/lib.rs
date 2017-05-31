@@ -19,8 +19,8 @@ use pwhash::unix;
 
 /// The Cracker struct is the main gateway into the cracker API
 pub struct Cracker {
-    hash_file: File,
-    wordlist_file: File,
+    hashes: Vec<String>,
+    wordlist: Vec<String>,
     password_pot: String
 }
 
@@ -34,10 +34,10 @@ impl Cracker {
     /// ```
     /// let cracker = Cracker::new(hash_file, wordlist_file, "password.pot");
     /// ```
-    pub fn new(h_file: File, w_file: File, p_pot: String) -> Self {
+    pub fn new(h: Vec<String>, w: Vec<String>, p_pot: String) -> Self {
         Cracker {
-            hash_file: h_file,
-            wordlist_file: w_file,
+            hashes: h,
+            wordlist: w,
             password_pot: p_pot,
         }
     }
@@ -51,32 +51,32 @@ impl Cracker {
     ///
     /// cracker.run(4, some_mangling_function);
     /// ```
-    pub fn run(&self, number_threads: usize, mangler: fn(String) -> Vec<String>) {
-        let h_file_clone = match self.hash_file.try_clone() {
-            Ok(clone) => clone,
-            _ => panic!("Error"),
-        };
-        let w_file_clone = match self.wordlist_file.try_clone() {
-            Ok(clone) => clone,
-            _ => panic!("Error"),
-        };
+    // pub fn run(&self, number_threads: usize, mangler: fn(String) -> Vec<String>) {
+    //     let h_file_clone = match self.hash_file.try_clone() {
+    //         Ok(clone) => clone,
+    //         _ => panic!("Error"),
+    //     };
+    //     let w_file_clone = match self.wordlist_file.try_clone() {
+    //         Ok(clone) => clone,
+    //         _ => panic!("Error"),
+    //     };
+    //
+    //     let hashes = BufReader::new(h_file_clone).lines()
+    //                             .map(|l| l.expect("Error reading hashlist")).collect();
+    //     let wordlist: Vec<String> = BufReader::new(w_file_clone).lines()
+    //                                 .map(|l| l.expect("Error reading wordlist")).collect();
+    //
+    //     let mut file = OpenOptions::new()
+    //         .write(true)
+    //         .create(true)
+    //         .open("passwords.pots")
+    //         .unwrap();
+    //
+    //     self.crack(&hashes, &wordlist, number_threads, &self.password_pot, mangler);
+    //
+    // }
 
-        let hashes = BufReader::new(h_file_clone).lines()
-                                .map(|l| l.expect("Error reading hashlist")).collect();
-        let wordlist: Vec<String> = BufReader::new(w_file_clone).lines()
-                                    .map(|l| l.expect("Error reading wordlist")).collect();
-
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open("passwords.pots")
-            .unwrap();
-
-        self.crack(&hashes, &wordlist, number_threads, &self.password_pot, mangler);
-
-    }
-
-    fn crack(&self, hashes: &Vec<String>, wordlist: &Vec<String>, number_threads: usize, password_pot: &str, mangler: fn(String) -> Vec<String>) {
+    fn crack(&self, number_threads: usize, password_pot: &str, mangler: fn(String) -> Vec<String>) {
 
         let mut pool = make_pool(number_threads).unwrap();
 
@@ -87,9 +87,9 @@ impl Cracker {
                                         .unwrap()));
 
             pool.scope(|hash_scope| {
-                for hash in hashes {
+                for hash in &self.hashes {
                     hash_scope.scope(|word_scope| {
-                        for chunk in wordlist.chunks(number_threads) {
+                        for chunk in self.wordlist.chunks(number_threads) {
                             let mutex = arc.clone();
                             word_scope.submit(move || {
                                 for word in chunk {
