@@ -72,7 +72,7 @@ impl Cracker {
                         for word in chunk {
                             if unix::verify(word, hash) {
                                 let mut file = mutex.lock().unwrap();
-                                file.write(word.as_bytes());
+                                file.write((hash.to_string() + word).as_bytes());
                             }
                         }
                     });
