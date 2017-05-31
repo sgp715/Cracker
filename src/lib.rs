@@ -19,6 +19,8 @@ use pwhash::unix;
 pub struct Cracker {
     hash_file: File,
     wordlist_file: File,
+    password_pot: String,
+    mangler: fn(String) -> Vec<String>,
 }
 
 fn dumby_mangler(word: String) -> Vec<String> {
@@ -26,10 +28,13 @@ fn dumby_mangler(word: String) -> Vec<String> {
 }
 
 impl Cracker {
-    pub fn new(h_file: File, w_file: File) -> Self {
+
+    pub fn new(h_file: File, w_file: File, p_pot: String, m: fn(String) -> Vec<String>) -> Self {
         Cracker {
             hash_file: h_file,
-            wordlist_file: w_file
+            wordlist_file: w_file,
+            password_pot: p_pot,
+            mangler: m,
         }
     }
 
@@ -54,7 +59,7 @@ impl Cracker {
             .open("passwords.pots")
             .unwrap();
 
-        self.crack(&hashes, &wordlist, number_threads, "passwords.pot", dumby_mangler);
+        self.crack(&hashes, &wordlist, number_threads, &self.password_pot, self.mangler);
 
     }
 
