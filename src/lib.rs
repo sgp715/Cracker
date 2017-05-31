@@ -21,6 +21,10 @@ pub struct Cracker {
     wordlist_file: File,
 }
 
+fn dumby_mangler(word: String) -> Vec<String> {
+    vec![word]
+}
+
 impl Cracker {
     pub fn new(h_file: File, w_file: File) -> Self {
         Cracker {
@@ -50,11 +54,11 @@ impl Cracker {
             .open("passwords.pots")
             .unwrap();
 
-        self.crack(&hashes, &wordlist, number_threads, "passwords.pot");
+        self.crack(&hashes, &wordlist, number_threads, "passwords.pot", dumby_mangler);
 
     }
 
-    fn crack(&self, hashes: &Vec<String>, wordlist: &Vec<String>, number_threads: usize, password_pot: &str) {
+    fn crack(&self, hashes: &Vec<String>, wordlist: &Vec<String>, number_threads: usize, password_pot: &str, mangler: fn(String) -> Vec<String>) {
 
         let mut pool = make_pool(number_threads).unwrap();
 
@@ -71,9 +75,12 @@ impl Cracker {
                             let mutex = arc.clone();
                             word_scope.submit(move || {
                                 for word in chunk {
-                                    if unix::verify(word, hash) {
-                                        let mut file = mutex.lock().unwrap();
-                                        file.write((hash.to_string() + ":" + word + "\n").as_bytes());
+                                    let mangled = mangler(word.to_string());
+                                    for mangle in &mangled {
+                                        if unix::verify(mangle, hash) {
+                                            let mut file = mutex.lock().unwrap();
+                                            file.write((hash.to_string() + ":" + word + "\n").as_bytes());
+                                        }
                                     }
                                 }
                             });
