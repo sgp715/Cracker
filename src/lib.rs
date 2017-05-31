@@ -64,21 +64,23 @@ impl Cracker {
                                         .open(password_pot)
                                         .unwrap()));
 
-        for hash in hashes {
-            pool.scope(|scope| {
-                for chunk in wordlist.chunks(32) {
-                    let mutex = arc.clone();
-                    scope.submit(move || {
-                        for word in chunk {
-                            if unix::verify(word, hash) {
-                                let mut file = mutex.lock().unwrap();
-                                file.write((hash.to_string() + word).as_bytes());
-                            }
+            pool.scope(|hash_scope| {
+                for hash in hashes {
+                    hash_scope.scope(|word_scope| {
+                        for chunk in wordlist.chunks(32) {
+                            let mutex = arc.clone();
+                            word_scope.submit(move || {
+                                for word in chunk {
+                                    if unix::verify(word, hash) {
+                                        let mut file = mutex.lock().unwrap();
+                                        file.write((hash.to_string() + word).as_bytes());
+                                    }
+                                }
+                            });
                         }
                     });
                 }
             });
-        }
 
     }
 }
