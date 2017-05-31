@@ -1,0 +1,9 @@
+[package]
+name = "cracker"
+version = "0.1.0"
+authors = ["sgp715 <7sebastianperez@gmail.com>"]
+
+[dependencies]
+blake2 = "0.5"
+clap = {version = "~2.19.0", features = ["yaml"]}
+cracker = { git = "https://github.com/sgp715/Cracker.git" }
