@@ -7,6 +7,9 @@ use std::sync::{Arc, Mutex};
 extern crate blake2;
 use blake2::{Blake2b, Digest};
 
+extern crate pwhash;
+use pwhash::unix;
+
 
 pub struct Cracker {
     hash_file: File,
@@ -47,7 +50,7 @@ impl Cracker {
 
         let number_words = wordlist.len();
         let wordlist_data = Arc::new(Mutex::new(wordlist));
-        let hash_data = Arc::new(hash);
+        // let hash_data = Arc::new(hash);
         let mut threads = vec![number_threads; (number_words / number_threads)];
         threads.push(number_words % number_threads);
         let mut base = 0;
@@ -55,22 +58,28 @@ impl Cracker {
             let mut children = vec![];
             for i in base..(base + t) {
                 let wordlist_data = wordlist_data.clone();
-                let hash_data = hash_data.clone();
+                let hash = hash.clone();
                 children.push(
                     thread::spawn(move || {
-                        let mut hasher = Blake2b::default();
                         let ref mut word = wordlist_data.lock().unwrap()[i];
-                        hasher.input(word.to_string().as_bytes());
-                        let hashed_word: Vec<u8> = hasher.result().iter().cloned().collect();
-                        let mut compare = String::new();
-                        for byte in hashed_word {
-                            compare.push_str(format!("{:x}", byte).as_str());
-                        }
-                        if hash_data.to_lowercase() == compare {
+                        if unix::verify(word, &hash) {
                             Some(word.to_string())
                         } else {
                             None
                         }
+                        // let mut hasher = Blake2b::default();
+                        // let ref mut word = wordlist_data.lock().unwrap()[i];
+                        // hasher.input(word.to_string().as_bytes());
+                        // let hashed_word: Vec<u8> = hasher.result().iter().cloned().collect();
+                        // let mut compare = String::new();
+                        // for byte in hashed_word {
+                        //     compare.push_str(format!("{:x}", byte).as_str());
+                        // }
+                        // if hash_data.to_lowercase() == compare {
+                        //     Some(word.to_string())
+                        // } else {
+                        //     None
+                        // }
                     })
                 );
             }
