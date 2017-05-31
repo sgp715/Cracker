@@ -2,6 +2,8 @@
 name = "cracker"
 version = "0.1.0"
 authors = ["sgp715 <7sebastianperez@gmail.com>"]
+description = "Unix-like password Cracker API"
+license = "MIT"
 
 [dependencies]
 blake2 = "0.5"
