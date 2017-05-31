@@ -1,3 +1,5 @@
+//! # [An API for unix style password cracking](https://github.com/sgp715/Cracker)
+
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufRead, BufReader};
@@ -15,30 +17,26 @@ use blake2::{Blake2b, Digest};
 extern crate pwhash;
 use pwhash::unix;
 
-
+/// The Cracker struct is the main gateway into the cracker API
+///
+/// The crackre
 pub struct Cracker {
     hash_file: File,
     wordlist_file: File,
-    password_pot: String,
-    mangler: fn(String) -> Vec<String>,
-}
-
-fn dumby_mangler(word: String) -> Vec<String> {
-    vec![word]
+    password_pot: String
 }
 
 impl Cracker {
 
-    pub fn new(h_file: File, w_file: File, p_pot: String, m: fn(String) -> Vec<String>) -> Self {
+    pub fn new(h_file: File, w_file: File, p_pot: String) -> Self {
         Cracker {
             hash_file: h_file,
             wordlist_file: w_file,
             password_pot: p_pot,
-            mangler: m,
         }
     }
 
-    pub fn run(&self, number_threads: usize) {
+    pub fn run(&self, number_threads: usize, mangler: fn(String) -> Vec<String>) {
         let h_file_clone = match self.hash_file.try_clone() {
             Ok(clone) => clone,
             _ => panic!("Error"),
@@ -59,7 +57,7 @@ impl Cracker {
             .open("passwords.pots")
             .unwrap();
 
-        self.crack(&hashes, &wordlist, number_threads, &self.password_pot, self.mangler);
+        self.crack(&hashes, &wordlist, number_threads, &self.password_pot, mangler);
 
     }
 
@@ -95,10 +93,3 @@ impl Cracker {
             });
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     #[test]
-//     fn it_works() {
-//     }
-// }
