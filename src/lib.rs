@@ -71,7 +71,7 @@ impl Cracker {
             pool.scope(|hash_scope| {
                 for hash in hashes {
                     hash_scope.scope(|word_scope| {
-                        for chunk in wordlist.chunks(32) {
+                        for chunk in wordlist.chunks(number_threads) {
                             let mutex = arc.clone();
                             word_scope.submit(move || {
                                 for word in chunk {
