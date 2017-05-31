@@ -39,7 +39,8 @@ impl Cracker {
             _ => panic!("Error"),
         };
 
-        let mut hashes = BufReader::new(h_file_clone).lines();
+        let hashes = BufReader::new(h_file_clone).lines()
+                                .map(|l| l.expect("Error reading hashlist")).collect();
         let wordlist: Vec<String> = BufReader::new(w_file_clone).lines()
                                     .map(|l| l.expect("Error reading wordlist")).collect();
 
@@ -49,12 +50,11 @@ impl Cracker {
             .open("passwords.pots")
             .unwrap();
 
-        while let Some(Ok(hash)) = hashes.next() {
-            self.crack(&hash, wordlist.clone(), number_threads);
-        }
+        self.crack(&hashes, &wordlist, number_threads);
+
     }
 
-    fn crack(&self, hash: &str, wordlist: Vec<String>, number_threads: usize) {
+    fn crack(&self, hashes: &Vec<String>, wordlist: &Vec<String>, number_threads: usize) {
 
         let mut pool = make_pool(number_threads).unwrap();
 
@@ -64,52 +64,21 @@ impl Cracker {
                                         .open("passwords.pots")
                                         .unwrap()));
 
-        pool.scope(|scope| {
-            for chunk in wordlist.chunks(32) {
-                let mutex = arc.clone();
-                scope.submit(move || {
-                    for word in chunk {
-                        if unix::verify(word, hash) {
-                            let mut file = mutex.lock().unwrap();
-                            file.write(word.as_bytes());
+        for hash in hashes {
+            pool.scope(|scope| {
+                for chunk in wordlist.chunks(32) {
+                    let mutex = arc.clone();
+                    scope.submit(move || {
+                        for word in chunk {
+                            if unix::verify(word, hash) {
+                                let mut file = mutex.lock().unwrap();
+                                file.write(word.as_bytes());
+                            }
                         }
-                    }
-                });
-            }
-        });
-        //
-        // for t in threads {
-        //     let mut children = vec![];
-        //     for i in base..(base + t) {
-        //         let wordlist_data = wordlist_data.clone();
-        //         let hash = hash.clone();
-        //         children.push(
-        //             thread::spawn(move || {
-        //                 let ref mut word = wordlist_data.lock().unwrap()[i];
-        //                 if unix::verify(word, &hash) {
-        //                     Some(word.to_string())
-        //                 } else {
-        //                     None
-        //                 }
-        //             })
-        //         );
-        //     }
-        //
-        //     for child in children {
-        //         match child.join() {
-        //             Ok(option) => {
-        //                 if option.is_some() {
-        //                     return option;
-        //                 }
-        //             },
-        //             _ => ()
-        //         }
-        //     }
-        //
-        //     base = base + t;
-        //
-        // }
-        
+                    });
+                }
+            });
+        }
     }
 }
 
