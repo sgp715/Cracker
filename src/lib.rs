@@ -18,8 +18,6 @@ extern crate pwhash;
 use pwhash::unix;
 
 /// The Cracker struct is the main gateway into the cracker API
-///
-/// The crackre
 pub struct Cracker {
     hash_file: File,
     wordlist_file: File,
@@ -28,6 +26,14 @@ pub struct Cracker {
 
 impl Cracker {
 
+    /// Create a new Cracker where
+    /// h_file is the hashfile you want to crack,
+    /// w_file is the wordlist that you want to work with
+    /// and p_pot is the password pot that cracked passwords are saved to
+    /// # Examples
+    /// ```
+    /// let cracker = Cracker::new(hash_file, wordlist_file, "password.pot");
+    /// ```
     pub fn new(h_file: File, w_file: File, p_pot: String) -> Self {
         Cracker {
             hash_file: h_file,
@@ -36,6 +42,15 @@ impl Cracker {
         }
     }
 
+    /// Runs the cracker that you have created where
+    /// number_threads is the number of threads to use
+    /// and mangler is the function that you want to mangle words with
+    /// # Examples
+    /// ```
+    /// let cracker = Cracker::new(hash_file, wordlist_file, "password.pot");
+    ///
+    /// cracker.run(4, some_mangling_function);
+    /// ```
     pub fn run(&self, number_threads: usize, mangler: fn(String) -> Vec<String>) {
         let h_file_clone = match self.hash_file.try_clone() {
             Ok(clone) => clone,
