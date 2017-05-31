@@ -50,25 +50,28 @@ impl Cracker {
             .unwrap();
 
         while let Some(Ok(hash)) = hashes.next() {
-            match self.crack(&hash, wordlist.clone(), number_threads) {
-                Some(word) => {
-                    file.write((word + ":" + &hash).as_bytes());
-                },
-                None => println!("Could not crack hash: {}\n", &hash),
-            }
+            self.crack(&hash, wordlist.clone(), number_threads);
         }
     }
 
-    fn crack(&self, hash: &str, wordlist: Vec<String>, number_threads: usize) -> Option<String> {
+    fn crack(&self, hash: &str, wordlist: Vec<String>, number_threads: usize) {
 
         let mut pool = make_pool(number_threads).unwrap();
 
+        let arc = Arc::new(Mutex::new(OpenOptions::new()
+                                        .write(true)
+                                        .create(true)
+                                        .open("passwords.pots")
+                                        .unwrap()));
+
         pool.scope(|scope| {
             for chunk in wordlist.chunks(32) {
+                let mutex = arc.clone();
                 scope.submit(move || {
                     for word in chunk {
                         if unix::verify(word, hash) {
-                            println!("pass: {}", word);
+                            let mut file = mutex.lock().unwrap();
+                            file.write(word.as_bytes());
                         }
                     }
                 });
@@ -106,8 +109,7 @@ impl Cracker {
         //     base = base + t;
         //
         // }
-
-        None
+        
     }
 }
 
