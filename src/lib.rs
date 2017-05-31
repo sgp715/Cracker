@@ -50,18 +50,18 @@ impl Cracker {
             .open("passwords.pots")
             .unwrap();
 
-        self.crack(&hashes, &wordlist, number_threads);
+        self.crack(&hashes, &wordlist, number_threads, "passwords.pot");
 
     }
 
-    fn crack(&self, hashes: &Vec<String>, wordlist: &Vec<String>, number_threads: usize) {
+    fn crack(&self, hashes: &Vec<String>, wordlist: &Vec<String>, number_threads: usize, password_pot: &str) {
 
         let mut pool = make_pool(number_threads).unwrap();
 
         let arc = Arc::new(Mutex::new(OpenOptions::new()
                                         .write(true)
                                         .create(true)
-                                        .open("passwords.pots")
+                                        .open(password_pot)
                                         .unwrap()));
 
         for hash in hashes {
@@ -79,6 +79,7 @@ impl Cracker {
                 }
             });
         }
+
     }
 }
 
