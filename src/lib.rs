@@ -28,7 +28,7 @@ impl Cracker {
 
     /// Create a new Cracker where
     /// h_file is the hashfile you want to crack,
-    bu/// w_file is the wordlist that you want to work with
+    /// w_file is the wordlist that you want to work with
     /// and p_pot is the password pot that cracked passwords are saved to
     /// # Examples
     /// ```
@@ -47,35 +47,10 @@ impl Cracker {
     /// and mangler is the function that you want to mangle words with
     /// # Examples
     /// ```
-    /// let cracker = Cracker::new(hash_file, wordlist_file, "password.pot");
+    /// let cracker = Cracker::new(hashes, wordlist, "password.pot");
     ///
-    /// cracker.run(4, some_mangling_function);
+    /// cracker.crack(4, some_mangling_function);
     /// ```
-    // pub fn run(&self, number_threads: usize, mangler: fn(String) -> Vec<String>) {
-        let h_file_clone = match self.hash_file.try_clone() {
-            Ok(clone) => clone,
-            _ => panic!("Error"),
-        };
-        let w_file_clone = match self.wordlist_file.try_clone() {
-            Ok(clone) => clone,
-            _ => panic!("Error"),
-        };
-
-        let hashes = BufReader::new(h_file_clone).lines()
-                                .map(|l| l.expect("Error reading hashlist")).collect();
-        let wordlist: Vec<String> = BufReader::new(w_file_clone).lines()
-                                    .map(|l| l.expect("Error reading wordlist")).collect();
-    //
-    //     let mut file = OpenOptions::new()
-    //         .write(true)
-    //         .create(true)
-    //         .open("passwords.pots")
-    //         .unwrap();
-    //
-    //     self.crack(&hashes, &wordlist, number_threads, &self.password_pot, mangler);
-    //
-    // }
-
     pub fn crack(&self, number_threads: usize, password_pot: &str, mangler: fn(String) -> Vec<String>) {
 
         let mut pool = make_pool(number_threads).unwrap();
