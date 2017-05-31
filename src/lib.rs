@@ -51,14 +51,14 @@ impl Cracker {
     ///
     /// cracker.crack(4, some_mangling_function);
     /// ```
-    pub fn crack(&self, number_threads: usize, password_pot: &str, mangler: fn(String) -> Vec<String>) {
+    pub fn crack(&self, number_threads: usize, mangler: fn(String) -> Vec<String>) {
 
         let mut pool = make_pool(number_threads).unwrap();
 
         let arc = Arc::new(Mutex::new(OpenOptions::new()
                                         .write(true)
                                         .create(true)
-                                        .open(password_pot)
+                                        .open(&self.password_pot)
                                         .unwrap()));
 
             pool.scope(|hash_scope| {
