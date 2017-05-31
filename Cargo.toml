@@ -6,3 +6,4 @@ authors = ["sgp715 <7sebastianperez@gmail.com>"]
 [dependencies]
 blake2 = "0.5"
 pwhash = "0.1.2"
+jobsteal = "0.5.1"

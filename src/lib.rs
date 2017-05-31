@@ -4,6 +4,9 @@ use std::io::{BufRead, BufReader};
 use std::thread;
 use std::sync::{Arc, Mutex};
 
+extern crate jobsteal;
+use jobsteal::make_pool;
+
 use std::fs::OpenOptions;
 
 extern crate blake2;
@@ -47,7 +50,7 @@ impl Cracker {
             .unwrap();
 
         while let Some(Ok(hash)) = hashes.next() {
-            match self.crack(hash.clone(), wordlist.clone(), number_threads) {
+            match self.crack(&hash, wordlist.clone(), number_threads) {
                 Some(word) => {
                     file.write((word + ":" + &hash).as_bytes());
                 },
@@ -56,44 +59,53 @@ impl Cracker {
         }
     }
 
-    fn crack(&self, hash: String, wordlist: Vec<String>, number_threads: usize) -> Option<String> {
+    fn crack(&self, hash: &str, wordlist: Vec<String>, number_threads: usize) -> Option<String> {
 
-        let number_words = wordlist.len();
-        let wordlist_data = Arc::new(Mutex::new(wordlist));
-        let mut threads = vec![number_threads; (number_words / number_threads)];
-        threads.push(number_words % number_threads);
-        let mut base = 0;
-        for t in threads {
-            let mut children = vec![];
-            for i in base..(base + t) {
-                let wordlist_data = wordlist_data.clone();
-                let hash = hash.clone();
-                children.push(
-                    thread::spawn(move || {
-                        let ref mut word = wordlist_data.lock().unwrap()[i];
-                        if unix::verify(word, &hash) {
-                            Some(word.to_string())
-                        } else {
-                            None
+        let mut pool = make_pool(number_threads).unwrap();
+
+        pool.scope(|scope| {
+            for chunk in wordlist.chunks(32) {
+                scope.submit(move || {
+                    for word in chunk {
+                        if unix::verify(word, hash) {
+                            println!("pass: {}", word);
                         }
-                    })
-                );
+                    }
+                });
             }
-
-            for child in children {
-                match child.join() {
-                    Ok(option) => {
-                        if option.is_some() {
-                            return option;
-                        }
-                    },
-                    _ => ()
-                }
-            }
-
-            base = base + t;
-
-        }
+        });
+        //
+        // for t in threads {
+        //     let mut children = vec![];
+        //     for i in base..(base + t) {
+        //         let wordlist_data = wordlist_data.clone();
+        //         let hash = hash.clone();
+        //         children.push(
+        //             thread::spawn(move || {
+        //                 let ref mut word = wordlist_data.lock().unwrap()[i];
+        //                 if unix::verify(word, &hash) {
+        //                     Some(word.to_string())
+        //                 } else {
+        //                     None
+        //                 }
+        //             })
+        //         );
+        //     }
+        //
+        //     for child in children {
+        //         match child.join() {
+        //             Ok(option) => {
+        //                 if option.is_some() {
+        //                     return option;
+        //                 }
+        //             },
+        //             _ => ()
+        //         }
+        //     }
+        //
+        //     base = base + t;
+        //
+        // }
 
         None
     }
