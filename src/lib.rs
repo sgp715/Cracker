@@ -72,7 +72,7 @@ impl Cracker {
                                     for mangle in &mangled {
                                         if unix::verify(mangle, hash) {
                                             let mut file = mutex.lock().unwrap();
-                                            file.write((hash.to_string() + ":" + word + "\n").as_bytes());
+                                            file.write((hash.to_string() + ":" + mangle + "\n").as_bytes());
                                         }
                                     }
                                 }
