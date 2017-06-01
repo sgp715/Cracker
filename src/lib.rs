@@ -70,9 +70,7 @@ impl Cracker {
                                 for word in chunk {
                                     let mangled = mangler(word.to_string());
                                     for mangle in &mangled {
-                                        println!("mangle {}", mangle);
                                         if unix::verify(mangle, hash) {
-                                            println!("mangle selected {}", mangle);
                                             let mut file = mutex.lock().unwrap();
                                             file.write((hash.to_string() + ":" + mangle + "\n").as_bytes());
                                         }
